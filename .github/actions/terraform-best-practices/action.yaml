@@ -13,13 +13,16 @@ runs:
         terraform_version: latest
     
     - name: Initialize Terraform
+      shell: bash
       run: terraform init
       working-directory: ${{ inputs.directory }}
     
     - name: Terraform Validate
+      shell: bash
       run: terraform validate
       working-directory: ${{ inputs.directory }}
     
     - name: Check Formatting
+      shell: bash
       run: terraform fmt -check
       working-directory: ${{ inputs.directory }}
