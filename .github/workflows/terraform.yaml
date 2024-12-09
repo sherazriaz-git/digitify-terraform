@@ -17,8 +17,6 @@ jobs:
       
       - name: Run Best Practices
         uses: ./.github/actions/terraform-best-practices
-        with:
-          directory: "./terraform"
 
   terraform-plan:
     if: github.event_name == 'pull_request'
@@ -36,7 +34,6 @@ jobs:
         run: |
           terraform init
           terraform plan -out=tfplan
-        working-directory: ./terraform
       
       - name: Upload Terraform Plan to S3
         uses: ./.github/actions/plan
@@ -58,4 +55,3 @@ jobs:
         with:
           bucket_name: "digitify-terraform-state"
           plan_file_key: "github/plan/${{ github.sha }}-${{ github.event.pull_request.number }}.plan"
-          directory: "./terraform"
