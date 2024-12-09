@@ -1,5 +1,5 @@
 name: Deploy
-
+defaults:
   run:
     working-directory: ./prod
 
