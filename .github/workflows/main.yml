@@ -60,7 +60,7 @@ on:
 
 jobs:
   run-terraform-best-practices:
-    uses: ./.github/actions/terraform-best-practices/action.yaml
+    uses: ../actions/terraform-best-practices/action.yaml
     with:
       working-directory: './prod' # Adjust the path if Terraform files are in a subdirectory
     secrets:
