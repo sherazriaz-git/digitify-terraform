@@ -1,134 +1,222 @@
-# name: "Terraform Plan"
-# description: "Terraform Plan Composite Action"
+# # name: "Upload Terraform Plan to S3"
+# # description: "Upload Terraform plan file to S3 bucket"
+# # inputs:
+# #   plan_file:
+# #     description: "Terraform plan file"
+# #     required: true
+# #   bucket_name:
+# #     description: "S3 bucket name"
+# #     required: true
+# #   commit_id:
+# #     description: "Git commit ID"
+# #     required: true
+# #   pr_id:
+# #     description: "Pull Request ID"
+# #     required: true
+# # runs:
+# #   using: "composite"
+# #   steps:
+# #     - name: Upload plan to S3
+# #       run: |
+# #         aws s3 cp ${{ inputs.plan_file }} s3://${{ inputs.bucket_name }}/terraform-plans/${{ inputs.commit_id }}-${{ inputs.pr_id }}.plan
+# #       env:
+# #         AWS_REGION: us-east-1
+# #         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+
+# name: 'Terraform setup and plan'
+# description: 'Setup Terraform and creates plan'
 # inputs:
-#   github-token:
+#   terraform_directory:
+#     description: 'Directory that holds Terraform code'
 #     required: true
-#     description: "GitHub Repository Token"
-#   deploy:
+#   terraform_sa: 
+#     description: 'GCP service account used for Terraform actions'
 #     required: true
-#     description: "Desired state for the deployment. true=deploy | false=destroy"
-#   aws-region:
+#   terraform_version: 
+#     description: 'Terraform Version'
 #     required: true
-#     description: "AWS Region"
-#   environment:
+#     default: 1.2.9
+#   github_token: 
+#     description: 'GitHub token for auth'
 #     required: true
-#     description: "Environment Name"
-#   init-outcome:
+#   google_sa_key:
+#     description: 'JSON key for GCP service account'
 #     required: true
-#     description: "Terraform init command outcome"
-#   extra-args:
-#     required: false
-#     description: "Terraform plan command extra arguments"
-# outputs:
-#   exitcode:
-#     description: "Terraform Plan Exit code"
-#     value: ${{ steps.plan.outputs.exitcode }}
+#   pr_id:
+#     description: 'Pull request ID'
+#     required: true
+
 # runs:
 #   using: "composite"
 #   steps:
-#     - name: Terraform Format and style
-#       id: fmt
-#       continue-on-error: true
-#       shell: bash
-#       run: terraform fmt -check -diff -recursive
-#     - name: Terraform Validate
-#       id: validate
-#       continue-on-error: true
-#       shell: bash
-#       run: terraform validate -no-color
-#     - name: Define Terraform Plan Command # 'terraform plan' or 'terraform plan -destroy'
-#       id: tf_plan_command
+#     - name: Setup Terraform
+#       uses: hashicorp/setup-terraform@v2
+#       with:
+#         terraform_version: ${{ inputs.terraforom_version }}
+#         terraform_wrapper: false
+
+#     - id: 'auth'
+#       name: 'Authenticate to Google Cloud'
+#       uses: 'google-github-actions/auth@v1'
+#       with:
+#         service_account: ${{ inputs.terraform_sa }}
+#         credentials_json: ${{ inputs.google_sa_key }}
+
+#     - name: 'Set up Cloud SDK'
+#       uses: 'google-github-actions/setup-gcloud@v0.6.0'
+
+#     - name: Terraform Init
+#       id: init
+#       working-directory: ${{ inputs.terraform_directory }}
 #       shell: bash
 #       run: |
-#         if ${{ inputs.deploy }}
-#         then
-#           echo "PLAN_COMMAND=terraform plan" >> $GITHUB_OUTPUT
-#         else
-#           echo "PLAN_COMMAND=terraform plan -destroy" >> $GITHUB_OUTPUT
-#         fi
-#     - name: Add extra arguments mask
-#       if: ${{ inputs.extra-args != '' }}
-#       shell: bash
-#       run: echo "::add-mask::${{ inputs.extra-args }}"
+#         terraform init
+
 #     - name: Terraform Plan
 #       id: plan
-#       continue-on-error: true
+#       working-directory: ${{ inputs.terraform_directory }}
 #       shell: bash
 #       run: |
-#         ${{ steps.tf_plan_command.outputs.PLAN_COMMAND }} \
-#           -var-file=envs/${{ inputs.environment }}/terraform.tfvars \
-#           -var="region=${{ inputs.aws-region }}" \
-#           -var="environment=${{ inputs.environment }}" \
-#           -no-color \
-#           -detailed-exitcode \
-#           -input=false \
-#           ${{ inputs.extra-args }} | tee plan.out
-#     - name: Comment Pull Request
-#       uses: actions/github-script@v6
-#       if: github.event_name == 'pull_request'
+#         echo 'plan<<EOF' >> $GITHUB_OUTPUT
+#         terraform plan -no-color -out=tfplan >> $GITHUB_OUTPUT
+#         echo 'EOF' >> $GITHUB_OUTPUT
+
+#     - name: Save Artifact
+#       id: save-artifact
+#       uses: actions/upload-artifact@v3
 #       with:
-#         github-token: ${{ inputs.github-token }}
-#         script: |
-#           // 1. Retrieve existing bot comments for the PR
-#           const { data: comments } = await github.rest.issues.listComments({
-#             owner: context.repo.owner,
-#             repo: context.repo.repo,
-#             issue_number: context.issue.number,
-#           })
-#           const botComment = comments.find(comment => {
-#             return comment.user.type === 'Bot' && comment.body.includes('${{ github.workflow }} ${{ inputs.environment }}')
-#           })
+#         name: ${{ inputs.pr_id }}-tf-plan
+#         path: ${{ inputs.terraform_directory }}/tfplan
 
-#           // 2. Prepare format of the comment
-#           const run_url = process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/actions/runs/' + process.env.GITHUB_RUN_ID
-#           const run_link = '<a href="' + run_url + '">Actions</a>.'
-#           const fs = require('fs')
-#           const plan_file = fs.readFileSync('plan.out', 'utf8')
-#           const plan = plan_file.length > 65000 ? plan_file.toString().substring(0, 65000) + " ..." : plan_file
-#           const truncated_message = plan_file.length > 65000 ? "Output is too long and was truncated. You can read full Plan in " + run_link + "<br /><br />" : ""
+#     - name: Comment Plan
+#       id: comment-plan
+#       uses: peter-evans/create-or-update-comment@v2
+#       with:
+#         token: ${{ inputs.github_token }}
+#         issue-number: ${{ inputs.pr_id }}
+#         body: |
+#           Terraform Plan:
 
-#           const output = `## ${{ github.workflow }} - ${{ inputs.environment }}
-#           #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-#           #### Terraform Initialization ⚙️\`${{ inputs.init-outcome }}\`
-#           #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-#           <details><summary>Validation Output</summary>
+#           ```
+#           ${{ steps.plan.outputs.plan }}
+#           ```
 
-#           \`\`\`\n
-#           ${{ steps.validate.outputs.stdout }}
-#           \`\`\`
+#           Plan saved to GH artifacts.
 
-#           </details>
 
-#           #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
 
-#           <details><summary>Show Plan</summary>
+name: "Terraform Plan"
+description: "Terraform Plan Composite Action"
+inputs:
+  github-token:
+    required: true
+    description: "GitHub Repository Token"
+  deploy:
+    required: true
+    description: "Desired state for the deployment. true=deploy | false=destroy"
+  aws-region:
+    required: true
+    description: "AWS Region"
+outputs:
+  exitcode:
+    description: "Terraform Plan Exit code"
+    value: ${{ steps.plan.outputs.exitcode }}
+runs:
+  using: "composite"
+  steps:
+    - name: Define Terraform Plan Command # 'terraform plan' or 'terraform plan -destroy'
+      id: tf_plan_command
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if ${{ inputs.deploy }}
+        then
+          echo "PLAN_COMMAND=terraform plan" >> $GITHUB_OUTPUT
+        else
+          echo "PLAN_COMMAND=terraform plan -destroy" >> $GITHUB_OUTPUT
+        fi
+    - name: Terraform Plan
+      id: plan
+      continue-on-error: true
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        ${{ steps.tf_plan_command.outputs.PLAN_COMMAND }} \
+          -var-file=envs/${{ inputs.environment }}/terraform.tfvars \
+          -var="region=${{ inputs.aws-region }}" \
+          -var="environment=${{ inputs.environment }}" \
+          -no-color \
+          -detailed-exitcode \
+          -input=false \
+          ${{ inputs.extra-args }} | tee plan.out
+    - name: Comment Pull Request
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request'
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          // 1. Retrieve existing bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          })
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('${{ github.workflow }} ${{ inputs.environment }}')
+          })
 
-#           \`\`\`\n
-#           ${plan}
-#           \`\`\`
+          // 2. Prepare format of the comment
+          const run_url = process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/actions/runs/' + process.env.GITHUB_RUN_ID
+          const run_link = '<a href="' + run_url + '">Actions</a>.'
+          const fs = require('fs')
+          const plan_file = fs.readFileSync('plan.out', 'utf8')
+          const plan = plan_file.length > 65000 ? plan_file.toString().substring(0, 65000) + " ..." : plan_file
+          const truncated_message = plan_file.length > 65000 ? "Output is too long and was truncated. You can read full Plan in " + run_link + "<br /><br />" : ""
 
-#           </details>
-#           ${truncated_message}
+          const output = `## ${{ github.workflow }} - ${{ inputs.environment }}
+          #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+          #### Terraform Initialization ⚙️\`${{ inputs.init-outcome }}\`
+          #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+          <details><summary>Validation Output</summary>
 
-#           *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ github.workspace }}\`, Workflow: \`${{ github.workflow }} ${{ inputs.environment }}\`*`;
+          \`\`\`\n
+          ${{ steps.validate.outputs.stdout }}
+          \`\`\`
 
-#           // 3. If we have a comment, update it, otherwise create a new one
-#           if (botComment) {
-#             github.rest.issues.updateComment({
-#               owner: context.repo.owner,
-#               repo: context.repo.repo,
-#               comment_id: botComment.id,
-#               body: output
-#             })
-#           } else {
-#             github.rest.issues.createComment({
-#               issue_number: context.issue.number,
-#               owner: context.repo.owner,
-#               repo: context.repo.repo,
-#               body: output
-#             })
-#           }
-#     - name: Terraform Plan Status
-#       if: steps.plan.outcome == 'failure'
-#       shell: bash
-#       run: exit 1
+          </details>
+
+          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+          <details><summary>Show Plan</summary>
+
+          \`\`\`\n
+          ${plan}
+          \`\`\`
+
+          </details>
+          ${truncated_message}
+
+          *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ github.workspace }}\`, Workflow: \`${{ github.workflow }} ${{ inputs.environment }}\`*`;
+
+          // 3. If we have a comment, update it, otherwise create a new one
+          if (botComment) {
+            github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: output
+            })
+          } else {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+          }
+    - name: Terraform Plan Status
+      if: steps.plan.outcome == 'failure'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: exit 1

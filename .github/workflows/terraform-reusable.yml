@@ -175,14 +175,9 @@ permissions:
 
 on: push
 
-defaults:
-  run:
-    shell: bash
-    working-directory: ./prod
-
 jobs:
-  terraform-plan:
-    name: Terraform Plan
+  terraform-validate:
+    name: Terraform Init and Validate
     runs-on: ubuntu-latest
     outputs:
       exitcode: ${{ steps.plan.outputs.exitcode }}
@@ -191,8 +186,35 @@ jobs:
         uses: actions/checkout@v4
       - name: Terraform Init
         id: init
-        uses: ./.github/actions/init
+        uses: ./.github/actions/terraform-init
         with:
           aws-region: us-east-1
           terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
+          working-directory: prod
+
+  terraform-plan:
+    name: Terraform Init and Validate
+    runs-on: ubuntu-latest
+    outputs:
+      exitcode: ${{ steps.plan.outputs.exitcode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Terraform Init
+        if: github.ref =! 'refs/heads/dev'
+        id: init
+        uses: ./.github/actions/terraform-init
+        with:
+          aws-region: us-east-1
+          terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
+          working-directory: prod
+
+      - name: Terraform Plan
+        if: github.ref == 'refs/heads/dev'
+        id: plan
+        uses: ./.github/actions/terraform-plan
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy: true
+          aws-region: us-east-1
           working-directory: prod
