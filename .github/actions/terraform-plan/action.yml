@@ -143,13 +143,10 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         ${{ steps.tf_plan_command.outputs.PLAN_COMMAND }} \
-          -var-file=envs/${{ inputs.environment }}/terraform.tfvars \
-          -var="region=${{ inputs.aws-region }}" \
-          -var="environment=${{ inputs.environment }}" \
+           -var=maintainer=$GITHUB_USER \
           -no-color \
           -detailed-exitcode \
-          -input=false \
-          ${{ inputs.extra-args }} | tee plan.out
+          -input=false | tee plan.out
     - name: Comment Pull Request
       uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
@@ -163,7 +160,7 @@ runs:
             issue_number: context.issue.number,
           })
           const botComment = comments.find(comment => {
-            return comment.user.type === 'Bot' && comment.body.includes('${{ github.workflow }} ${{ inputs.environment }}')
+            return comment.user.type === 'Bot' && comment.body.includes('${{ github.workflow }}
           })
 
           // 2. Prepare format of the comment
@@ -174,7 +171,7 @@ runs:
           const plan = plan_file.length > 65000 ? plan_file.toString().substring(0, 65000) + " ..." : plan_file
           const truncated_message = plan_file.length > 65000 ? "Output is too long and was truncated. You can read full Plan in " + run_link + "<br /><br />" : ""
 
-          const output = `## ${{ github.workflow }} - ${{ inputs.environment }}
+          const output = `## ${{ github.workflow }} 
           #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
           #### Terraform Initialization ⚙️\`${{ inputs.init-outcome }}\`
           #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
