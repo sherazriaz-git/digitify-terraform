@@ -1,35 +1,54 @@
-name: Terraform Plan
+name: Terraform with AWS OIDC Role
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
 
-env:
-  TF_SA: <GOOGLE_SA_EMAIL>
-  TERRAFORM_VERSION: "1.2.9"
-  TF_IN_AUTOMATION: "True"
-
 jobs:
-  terraform_plan:
+  terraform:
+    name: Terraform with AWS OIDC
     runs-on: ubuntu-latest
-    if: github.event.review.state != 'approved'
+
+    permissions:
+      id-token: write  # Required for OIDC
+      contents: read   # For accessing the repository
+
     steps:
-      - uses: actions/checkout@v3
+      # Step 1: Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Get PR ID
-        id: pr-id
-        shell: bash
-        env:
-          GITHUB_REF: ${{ inputs.github_ref }}
-        run: |
-          PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
-          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_OUTPUT
-
-      - name: Terraform Plan
-        uses: ./.github/plan
+      # Step 2: Configure AWS credentials using OIDC
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          terraform_sa: ${{ env.TF_SA }}
-          terraform_directory: "terraform"
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-          google_sa_key: ${{ secrets.GOOGLE_CREDENTIALS }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_id: ${{ steps.pr-id.outputs.PR_NUMBER }}
+          role-to-assume: arn:aws:iam::099199746132:role/github-oidc-provider-aws
+          aws-region: us-east-1  # Replace with your desired AWS region
+
+      # Step 3: Setup Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0  # Adjust the version as needed
+
+      # Step 4: Terraform Init
+      - name: Terraform Init
+        run: cd prod &&  terraform init
+
+      # Step 5: Terraform Format and Validate
+      - name: Terraform Format and Validate
+        run: |
+          terraform fmt -check
+          terraform validate
+
+      # Step 6: Terraform Plan
+      - name: Terraform Plan
+        id: plan
+        run: cd prod && terraform plan -out=tfplan
+
+      # Step 7: Terraform Apply (only on main branch)
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: cd prod &&  terraform apply -auto-approve tfplan
