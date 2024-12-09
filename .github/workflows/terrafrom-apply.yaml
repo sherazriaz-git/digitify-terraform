@@ -1,0 +1,7 @@
+name: "Run Terraform Apply"
+on:
+  workflow_dispatch:
+
+jobs:
+  call-reusable:
+    uses: ./.github/workflows/terraform.yml

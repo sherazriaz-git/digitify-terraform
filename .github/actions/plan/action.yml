@@ -1,0 +1,24 @@
+name: "Upload Terraform Plan to S3"
+description: "Upload Terraform plan file to S3 bucket"
+inputs:
+  plan_file:
+    description: "Terraform plan file"
+    required: true
+  bucket_name:
+    description: "S3 bucket name"
+    required: true
+  commit_id:
+    description: "Git commit ID"
+    required: true
+  pr_id:
+    description: "Pull Request ID"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Upload plan to S3
+      run: |
+        aws s3 cp ${{ inputs.plan_file }} s3://${{ inputs.bucket_name }}/terraform-plans/${{ inputs.commit_id }}-${{ inputs.pr_id }}.plan
+      env:
+        AWS_REGION: us-east-1
+        AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}

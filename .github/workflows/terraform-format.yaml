@@ -1,0 +1,9 @@
+name: "Run Terraform Best Practices"
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  call-reusable:
+    uses: ./.github/workflows/terraform.yml

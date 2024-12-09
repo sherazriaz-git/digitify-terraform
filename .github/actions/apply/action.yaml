@@ -1,0 +1,26 @@
+name: "Apply Terraform Plan"
+description: "Download and apply Terraform plan from S3"
+inputs:
+  bucket_name:
+    description: "S3 bucket name"
+    required: true
+  plan_file_key:
+    description: "S3 plan file key"
+    required: true
+  directory:
+    description: "Directory containing Terraform code"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Download Terraform Plan
+      run: |
+        aws s3 cp s3://${{ inputs.bucket_name }}/${{ inputs.plan_file_key }} ./plan.out
+      env:
+        AWS_REGION: us-east-1
+        AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+
+    - name: Apply Terraform Plan
+      run: terraform apply "plan.out"
+      working-directory: ${{ inputs.directory }}

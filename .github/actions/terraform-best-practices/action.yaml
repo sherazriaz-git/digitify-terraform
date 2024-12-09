@@ -1,0 +1,25 @@
+name: "Terraform Best Practices"
+description: "Run Terraform best practices checks"
+inputs:
+  directory:
+    description: "Directory containing Terraform code"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: latest
+    
+    - name: Initialize Terraform
+      run: terraform init
+      working-directory: ${{ inputs.directory }}
+    
+    - name: Terraform Validate
+      run: terraform validate
+      working-directory: ${{ inputs.directory }}
+    
+    - name: Check Formatting
+      run: terraform fmt -check
+      working-directory: ${{ inputs.directory }}
