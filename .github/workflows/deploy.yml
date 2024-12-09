@@ -1,5 +1,8 @@
 name: Deploy
 
+  run:
+    working-directory: ./prod
+
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
@@ -41,7 +44,5 @@ jobs:
       setup-python: true
       python-version: "3.11"
     secrets:
-      tf-token: ${{ secrets.TF_TOKEN }}
       terraform-execution-iam-plan-role-arn: ${{ secrets.PROD_AWS_PLAN_ROLE_ARN }}
       terraform-execution-iam-apply-role-arn: ${{ secrets.PROD_AWS_APPLY_ROLE_ARN }}
-      extra-args: ${{ secrets.PROD_EXTRA_ARGS }}
