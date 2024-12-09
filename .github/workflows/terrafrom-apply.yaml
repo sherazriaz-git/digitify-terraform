@@ -4,4 +4,4 @@ on:
 
 jobs:
   call-reusable:
-    uses: ./.github/workflows/terraform.yml
+    uses: ./.github/workflows/terraform.yaml
