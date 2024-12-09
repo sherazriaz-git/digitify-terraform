@@ -1,63 +1,63 @@
-name: "Terraform Pipeline"
-on:
-  push:
-    branches:
-      - '**'
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+# name: "Terraform Pipeline"
+# on:
+#   push:
+#     branches:
+#       - '**'
+#   pull_request:
+#     branches:
+#       - main
+#   workflow_dispatch:
 
-jobs:
-  terraform:
-    permissions:
-      id-token: write
-      contents: read
-    runs-on: ubuntu-latest
-    environment: production
-  terraform-best-practices:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+# jobs:
+#   terraform:
+#     permissions:
+#       id-token: write
+#       contents: read
+#     runs-on: ubuntu-latest
+#     environment: production
+#   terraform-best-practices:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
       
-      - name: Run Best Practices
-        uses: ./.github/actions/terraform-best-practices
+#       - name: Run Best Practices
+#         uses: ./.github/actions/terraform-best-practices
 
-  terraform-plan:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+#   terraform-plan:
+#     if: github.event_name == 'pull_request'
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: latest
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v2
+#         with:
+#           terraform_version: latest
 
-      - name: Generate Terraform Plan
-        run: |
-          terraform init
-          terraform plan -out=tfplan
+#       - name: Generate Terraform Plan
+#         run: |
+#           terraform init
+#           terraform plan -out=tfplan
       
-      - name: Upload Terraform Plan to S3
-        uses: ./.github/actions/plan
-        with:
-          plan_file: "tfplan"
-          bucket_name: "my-terraform-bucket"
-          commit_id: ${{ github.sha }}
-          pr_id: ${{ github.event.pull_request.number }}
+#       - name: Upload Terraform Plan to S3
+#         uses: ./.github/actions/plan
+#         with:
+#           plan_file: "tfplan"
+#           bucket_name: "my-terraform-bucket"
+#           commit_id: ${{ github.sha }}
+#           pr_id: ${{ github.event.pull_request.number }}
 
-  terraform-apply:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+#   terraform-apply:
+#     if: github.event_name == 'workflow_dispatch'
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
 
-      - name: Apply Terraform Plan
-        uses: ./.github/actions/apply
-        with:
-          bucket_name: "digitify-terraform-state"
-          plan_file_key: "github/plan/${{ github.sha }}-${{ github.event.pull_request.number }}.plan"
+#       - name: Apply Terraform Plan
+#         uses: ./.github/actions/apply
+#         with:
+#           bucket_name: "digitify-terraform-state"
+#           plan_file_key: "github/plan/${{ github.sha }}-${{ github.event.pull_request.number }}.plan"
