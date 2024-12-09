@@ -1,0 +1,22 @@
+name: Terraform Best Practices
+on:
+  workflow_call:
+    inputs:
+      role-arn:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+jobs:
+  terraform-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup AWS
+        uses: ./actions/aws-setup
+        with:
+          role-arn: ${{ inputs.role-arn }}
+          region: ${{ inputs.region }}
+      - name: Check Terraform Best Practices
+        run: terraform fmt -check && terraform validate

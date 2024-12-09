@@ -1,0 +1,46 @@
+name: Main Workflow
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  check-best-practices:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/terraform-best-practices.yml
+    with:
+      role-arn: ${{ secrets.AWS_ROLE_ARN }}
+      region: ${{ secrets.AWS_REGION }}
+
+  terraform-plan:
+    if: github.event_name == 'pull_request' && github.event.action == 'opened' || github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup AWS
+        uses: ./actions/aws-setup
+        with:
+          role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          region: ${{ secrets.AWS_REGION }}
+      - name: Run Terraform Plan
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          aws s3 cp tfplan s3://example-terraform/${{ github.event.pull_request.number }}-${{ github.sha }}
+
+  terraform-apply:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup AWS
+        uses: ./actions/aws-setup
+        with:
+          role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          region: ${{ secrets.AWS_REGION }}
+      - name: Download Terraform Plan
+        run: aws s3 cp s3://example-terraform/${{ github.event.pull_request.number }}-${{ github.sha }} tfplan
+      - name: Apply Terraform Plan
+        run: terraform apply tfplan
