@@ -214,7 +214,7 @@ jobs:
         id: plan
         uses: ./.github/actions/terraform-plan
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.TOKEN_GITHUB }}
           deploy: true
           aws-region: us-east-1
           working-directory: prod
