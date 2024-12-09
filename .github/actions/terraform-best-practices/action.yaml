@@ -15,7 +15,7 @@ runs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-to-assume: arn:aws:iam::099199746132:role/github-oidc-provider-aws
         aws-region: us-east-1
     
     - name: Initialize Terraform
