@@ -1,9 +1,0 @@
-name: "Run Terraform Plan"
-on:
-  pull_request:
-    branches:
-      - master
-
-jobs:
-  call-reusable:
-    uses: ./.github/workflows/terraform.yaml
