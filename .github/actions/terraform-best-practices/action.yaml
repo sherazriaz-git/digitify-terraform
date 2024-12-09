@@ -11,14 +11,17 @@ runs:
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: latest
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: us-east-1
     
     - name: Initialize Terraform
       shell: bash
       run: cd prod && terraform init
       working-directory: ${{ inputs.directory }}
-      env:
-        AWS_REGION: us-east-1
-        AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
     
     - name: Terraform Validate
       shell: bash
