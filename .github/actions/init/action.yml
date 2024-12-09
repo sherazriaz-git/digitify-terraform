@@ -1,4 +1,8 @@
 name: "Terraform Init"
+defaults:
+  run:
+    shell: bash
+    working-directory: ./prod
 description: "Terraform Init Composite Action"
 inputs:
   aws-region:
@@ -31,4 +35,4 @@ runs:
     - name: Terraform Init
       id: init
       shell: bash
-      run: cd prod && terraform init
+      run: terraform init
