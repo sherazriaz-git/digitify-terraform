@@ -30,9 +30,6 @@ defaults:
 
 jobs:
   deploy-prod:
-    defaults:
-      run:
-        working-directory: ./prod
     name: Prod Deployment
     uses: aws-samples/aws-terraform-reusable-workflow/.github/workflows/terraform-reusable.yml@v1.2.0
     with:
