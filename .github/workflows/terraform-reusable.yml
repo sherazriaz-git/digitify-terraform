@@ -161,3 +161,36 @@
 #           token: ${{ secrets.GITHUB_TOKEN }}
 #           environment: ${{ inputs.environment }}
 #           onlyDeactivateDeployments: true
+
+
+
+
+name: Terraform Reusable
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+  pull-requests: write # This is required to add comments to Pull Requests
+  deployments: write # This is required to deactivate deployments
+
+on: push
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    outputs:
+      exitcode: ${{ steps.plan.outputs.exitcode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Terraform Init
+        id: init
+        uses: ./.github/actions/init
+        with:
+          aws-region: us-east-1
+          terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
