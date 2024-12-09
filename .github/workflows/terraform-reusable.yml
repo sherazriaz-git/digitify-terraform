@@ -194,3 +194,4 @@ jobs:
         with:
           aws-region: us-east-1
           terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
+          working-directory: prod
