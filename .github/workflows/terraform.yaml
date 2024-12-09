@@ -9,6 +9,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  terraform:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    environment: production
   terraform-best-practices:
     runs-on: ubuntu-latest
     steps:
