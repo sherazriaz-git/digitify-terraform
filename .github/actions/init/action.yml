@@ -32,4 +32,4 @@ runs:
     - name: Terraform Init
       id: init
       shell: bash
-      run: terraform init
+      run: cd prod && terraform init
