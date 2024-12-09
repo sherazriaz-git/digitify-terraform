@@ -8,6 +8,7 @@ on:
       region:
         required: true
         type: string
+
 jobs:
   terraform-check:
     runs-on: ubuntu-latest
