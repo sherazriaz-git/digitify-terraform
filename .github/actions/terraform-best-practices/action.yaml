@@ -14,15 +14,15 @@ runs:
     
     - name: Initialize Terraform
       shell: bash
-      run: terraform init
+      run: cd prod && terraform init
       working-directory: ${{ inputs.directory }}
     
     - name: Terraform Validate
       shell: bash
-      run: terraform validate
+      run: cd prod &&  terraform validate
       working-directory: ${{ inputs.directory }}
     
     - name: Check Formatting
       shell: bash
-      run: terraform fmt -check
+      run: cd prod &&  terraform fmt -check
       working-directory: ${{ inputs.directory }}
