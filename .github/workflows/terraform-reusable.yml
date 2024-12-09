@@ -193,6 +193,7 @@ jobs:
           working-directory: prod
 
   terraform-plan:
+    if: github.ref == 'refs/heads/dev'
     name: Terraform Init and Validate
     runs-on: ubuntu-latest
     outputs:
@@ -201,7 +202,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Terraform Init
-        if: github.ref =! 'refs/heads/dev'
         id: init
         uses: ./.github/actions/terraform-init
         with:
@@ -210,7 +210,6 @@ jobs:
           working-directory: prod
 
       - name: Terraform Plan
-        if: github.ref == 'refs/heads/dev'
         id: plan
         uses: ./.github/actions/terraform-plan
         with:
