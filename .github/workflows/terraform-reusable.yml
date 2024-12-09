@@ -217,3 +217,36 @@ jobs:
           deploy: true
           aws-region: us-east-1
           working-directory: prod
+
+  terraform-apply:
+    needs: [terraform-plan]
+    name: Terraform Apply
+    if: (github.ref_name == 'dev' && needs.terraform-plan.outputs.exitcode == 2)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Terraform Init
+        id: init
+        uses: ./.github/actions/terraform-init
+        with:
+          aws-region: us-east-1
+          terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
+          working-directory: prod
+      
+      - name: Define Terraform Apply Command # 'terraform apply' or 'terraform destroy'
+        id: tf_apply_command
+        run: |
+          if ${{ inputs.deploy }}
+          then
+            echo "APPLY_COMMAND=terraform apply" >> $GITHUB_OUTPUT
+          else
+            echo "APPLY_COMMAND=terraform destroy" >> $GITHUB_OUTPUT
+          fi
+      - name: Terraform Apply
+        run: |
+          ${{ steps.tf_apply_command.outputs.APPLY_COMMAND }} \
+            -var=maintainer=$GITHUB_USER \
+            -auto-approve \
+            -input=false \
+            ${{ secrets.extra-args }}

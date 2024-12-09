@@ -118,6 +118,9 @@ inputs:
   aws-region:
     required: true
     description: "AWS Region"
+  working-directory:
+    required: false
+    description: "Working Directory"
 outputs:
   exitcode:
     description: "Terraform Plan Exit code"
@@ -143,7 +146,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         ${{ steps.tf_plan_command.outputs.PLAN_COMMAND }} \
-           -var=maintainer=$GITHUB_USER \
+          -var=maintainer=$GITHUB_USER \
           -no-color \
           -detailed-exitcode \
           -input=false | tee plan.out
