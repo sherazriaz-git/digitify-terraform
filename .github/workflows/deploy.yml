@@ -25,28 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-dev:
-    name: Dev Deployment
-    uses: aws-samples/aws-terraform-reusable-workflow/.github/workflows/terraform-reusable.yml@v1.2.0
-    with:
-      deploy: true
-      tf-version: ${{ vars.TF_VERSION }}
-      tf-organization: ${{ vars.TF_ORGANIZATION }}
-      tf-hostname: ${{ vars.TF_HOSTNAME }}
-      tf-workspace: ${{ vars.APP_NAME }}-dev
-      aws-region: "us-east-1"
-      environment: "dev"
-      ref: v1.2.0
-      local-execution-mode: true
-      setup-python: true
-      python-version: "3.11"
-    secrets:
-      tf-token: ${{ secrets.TF_TOKEN }}
-      terraform-execution-iam-plan-role-arn: ${{ secrets.DEV_AWS_PLAN_ROLE_ARN }}
-      terraform-execution-iam-apply-role-arn: ${{ secrets.DEV_AWS_APPLY_ROLE_ARN }}
-      extra-args: ${{ secrets.DEV_EXTRA_ARGS }}
   deploy-prod:
-    needs: deploy-dev
     name: Prod Deployment
     uses: aws-samples/aws-terraform-reusable-workflow/.github/workflows/terraform-reusable.yml@v1.2.0
     with:
@@ -55,7 +34,7 @@ jobs:
       tf-organization: ${{ vars.TF_ORGANIZATION }}
       tf-hostname: ${{ vars.TF_HOSTNAME }}
       tf-workspace: ${{ vars.APP_NAME }}-prod
-      aws-region: "us-east-2"
+      aws-region: "us-east-1"
       environment: "prod"
       ref: v1.2.0
       local-execution-mode: true
