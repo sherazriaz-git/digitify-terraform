@@ -1,51 +1,51 @@
-name: Deploy
+# name: Deploy
 
-permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
-  pull-requests: write # This is required to add comments to Pull Requests
-  deployments: write # This is required to deactivate deployments
+# permissions:
+#   id-token: write # This is required for requesting the JWT
+#   contents: read # This is required for actions/checkout
+#   pull-requests: write # This is required to add comments to Pull Requests
+#   deployments: write # This is required to deactivate deployments
 
-on:
-  workflow_dispatch:
-  pull_request:
-    paths:
-      - "**.tf*"
-      - ".github/workflows/deploy.yml"
-  push:
-    branches:
-      - "main"
-      - "dev"
-    paths:
-      - "**.tf*"
-      - ".github/workflows/deploy.yml"
+# on:
+#   workflow_dispatch:
+#   pull_request:
+#     paths:
+#       - "**.tf*"
+#       - ".github/workflows/deploy.yml"
+#   push:
+#     branches:
+#       - "main"
+#       - "dev"
+#     paths:
+#       - "**.tf*"
+#       - ".github/workflows/deploy.yml"
 
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: false
+# concurrency:
+#   group: ${{ github.ref }}
+#   cancel-in-progress: false
 
-defaults:
-  run:
-    working-directory: ./prod
+# defaults:
+#   run:
+#     working-directory: ./prod
 
-jobs:
-  deploy-prod:
-    name: Prod Deployment
-    uses: aws-samples/aws-terraform-reusable-workflow/.github/workflows/terraform-reusable.yml@v1.2.0
-    with:
-      deploy: true
-      tf-version: ${{ vars.TF_VERSION }}
-      tf-organization: ${{ vars.TF_ORGANIZATION }}
-      tf-hostname: ${{ vars.TF_HOSTNAME }}
-      tf-workspace: ${{ vars.APP_NAME }}-prod
-      aws-region: "us-east-1"
-      environment: "prod"
-      ref: v1.2.0
-      local-execution-mode: true
-      setup-python: true
-      python-version: "3.11"
-    secrets:
-      tf-token: ${{ secrets.TF_TOKEN }}
-      terraform-execution-iam-plan-role-arn: ${{ secrets.PROD_AWS_PLAN_ROLE_ARN }}
-      terraform-execution-iam-apply-role-arn: ${{ secrets.PROD_AWS_APPLY_ROLE_ARN }}
-      extra-args: ${{ secrets.PROD_EXTRA_ARGS }}
+# jobs:
+#   deploy-prod:
+#     name: Prod Deployment
+#     uses: aws-samples/aws-terraform-reusable-workflow/.github/workflows/terraform-reusable.yml@v1.2.0
+#     with:
+#       deploy: true
+#       tf-version: ${{ vars.TF_VERSION }}
+#       tf-organization: ${{ vars.TF_ORGANIZATION }}
+#       tf-hostname: ${{ vars.TF_HOSTNAME }}
+#       tf-workspace: ${{ vars.APP_NAME }}-prod
+#       aws-region: "us-east-1"
+#       environment: "prod"
+#       ref: v1.2.0
+#       local-execution-mode: true
+#       setup-python: true
+#       python-version: "3.11"
+#     secrets:
+#       tf-token: ${{ secrets.TF_TOKEN }}
+#       terraform-execution-iam-plan-role-arn: ${{ secrets.PROD_AWS_PLAN_ROLE_ARN }}
+#       terraform-execution-iam-apply-role-arn: ${{ secrets.PROD_AWS_APPLY_ROLE_ARN }}
+#       extra-args: ${{ secrets.PROD_EXTRA_ARGS }}

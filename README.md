@@ -1,1 +1,0 @@
-# digitify-terraform

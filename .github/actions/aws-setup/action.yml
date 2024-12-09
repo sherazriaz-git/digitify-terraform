@@ -1,17 +1,17 @@
-name: "AWS Setup"
-description: "Configure AWS OIDC Role"
-inputs:
-  role-arn:
-    description: "AWS OIDC Role ARN"
-    required: true
-  region:
-    description: "AWS Region"
-    required: true
-runs:
-  using: "composite"
-  steps:
-    - name: Configure AWS OIDC
-      uses: aws-actions/configure-aws-credentials@v3
-      with:
-        role-to-assume: ${{ inputs.role-arn }}
-        aws-region: ${{ inputs.region }}
+# name: "AWS Setup"
+# description: "Configure AWS OIDC Role"
+# inputs:
+#   role-arn:
+#     description: "AWS OIDC Role ARN"
+#     required: true
+#   region:
+#     description: "AWS Region"
+#     required: true
+# runs:
+#   using: "composite"
+#   steps:
+#     - name: Configure AWS OIDC
+#       uses: aws-actions/configure-aws-credentials@v3
+#       with:
+#         role-to-assume: ${{ inputs.role-arn }}
+#         aws-region: ${{ inputs.region }}

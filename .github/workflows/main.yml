@@ -55,9 +55,9 @@ on:
 
 jobs:
   run-terraform-best-practices:
-    uses: ./.github/workflows/terraform-best-practices.yml
+    uses: ./.github/actions/terraform-best-practices/action.yaml
     with:
-      working-directory: './terraform' # Adjust the path if Terraform files are in a subdirectory
+      working-directory: './prod' # Adjust the path if Terraform files are in a subdirectory
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
