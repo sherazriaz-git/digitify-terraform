@@ -178,6 +178,7 @@ on: push
 defaults:
   run:
     shell: bash
+    working-directory: ./prod
 
 jobs:
   terraform-plan:
