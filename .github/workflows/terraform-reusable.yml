@@ -67,9 +67,9 @@ jobs:
           terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
           working-directory: prod
 
-      - name: Terraform Plan
+      - name: Terraform Apply
         id: plan
         uses: ./.github/actions/terraform-apply
         with:
-          deploy: true
+          deploy: false
           working-directory: prod
