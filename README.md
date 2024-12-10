@@ -43,13 +43,13 @@ This repository provides a streamlined way to manage and deploy Terraform infras
 3. Run `terraform fmt -check` to ensure consistent code formatting.
 
 ### On Pull Request Creation
-1. Execute `terraform plan` to generate an execution plan.
+1. Execute `terraform plan -var=maintainer=$USER ` to generate an execution plan.
 2. Save the plan file in the S3 bucket with the naming convention:
    `commit_<COMMIT_ID>_pr_<PR_ID>.tfplan`.
 
 ### On Pull Request Merge
 1. Retrieve the corresponding plan file from the S3 bucket.
-2. Apply the plan to the infrastructure using `terraform apply`.
+2. Apply the plan to the infrastructure using `terraform apply -var=maintainer=$USER `.
 
 ## Folder Structure
 ```
