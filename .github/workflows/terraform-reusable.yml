@@ -33,7 +33,7 @@ jobs:
           working-directory: prod
 
   terraform-plan:
-    if: ${{ github.base_ref == 'dev' }}
+    if: github.ref == 'refs/heads/dev'
     name: Terraform Init and Validate
     runs-on: ubuntu-latest
     outputs:
