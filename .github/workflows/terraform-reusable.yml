@@ -33,7 +33,7 @@ jobs:
           working-directory: prod
 
   terraform-plan:
-    if: ${{ github.event_name == 'pull_request' && github.base_ref == 'dev' }}
+    if: ${{ github.base_ref == 'dev' }}
     name: Terraform Init and Validate
     runs-on: ubuntu-latest
     outputs:
