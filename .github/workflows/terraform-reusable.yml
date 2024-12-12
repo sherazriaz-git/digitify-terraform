@@ -61,7 +61,7 @@ jobs:
           maintainer: $GITHUB_USER
           working-directory: prod
       - name: Upload Plan to S3
-        run: aws s3 cp tfplan s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/pr${{ github.event.pull_request.number }}/terraform-plan$-{{ github.sha }}.tfplan
+        run: aws s3 cp tfplan s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/pr-${{ github.event.pull_request.number }}/terraform-plan$-${{ github.sha }}.tfplan
 
 
   # terraform-apply:
