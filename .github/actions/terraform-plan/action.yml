@@ -152,7 +152,7 @@ runs:
           -var=maintainer=${{ inputs.maintainer }} \
           -no-color \
           -detailed-exitcode \
-          -input=false | tee plan.out
+          -input=false | tee tfplan.out
           
     - name: Terraform Plan Status
       if: steps.plan.outcome == 'failure'
