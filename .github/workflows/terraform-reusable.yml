@@ -45,7 +45,7 @@ jobs:
 
   terraform-plan:
     name: Terraform Plan
-    if:  ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }} 
+    if:  ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.event.pull_request.base.ref == 'main' }} 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -67,7 +67,8 @@ jobs:
 
 
   terraform-apply:
-    needs: manual-approval
+    needs: [terraform-plan]
+    if:  ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' }} 
     name: Terraform Apply
     runs-on: ubuntu-latest
     permissions:
