@@ -29,10 +29,8 @@ on:
 jobs:
   terraform-check:
     name: Terraform fmt, validate and tfsec check
-    if:  ${{ github.ref != 'refs/heads/main' }}
+    if:  ${{ (github.event_name == 'push') && (github.ref != 'refs/heads/main') }} 
     runs-on: ubuntu-latest
-    outputs:
-      exitcode: ${{ steps.plan.outputs.exitcode }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +45,7 @@ jobs:
 
   terraform-plan:
     name: Terraform Plan
-    if:  ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }} 
+    if:  ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.event.pull_request.base.ref == 'main' }} 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -69,10 +67,13 @@ jobs:
 
 
   terraform-apply:
-    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true }} 
     needs: [terraform-plan]
+    if:  ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' }} 
     name: Terraform Apply
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
 
       - name: Upload Plan to S3
