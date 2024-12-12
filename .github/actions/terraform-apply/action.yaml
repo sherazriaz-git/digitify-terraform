@@ -39,4 +39,4 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         ${{ steps.tf_apply_command.outputs.APPLY_COMMAND }} \
-           -auto-approve prod.tfplan
+           -auto-approve tfplan
