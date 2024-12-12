@@ -115,8 +115,11 @@ inputs:
   aws-region:
     required: true
     description: "AWS Region"
+  terraform-execution-iam-role-arn:
+    required: false
+    description: "Terraform Execution IAM Role ARN"
   working-directory:
-    required: true
+    required: false
     description: "Working Directory"
   maintainer:
     required: true
@@ -152,7 +155,7 @@ runs:
           -var=maintainer=${{ inputs.maintainer }} \
           -no-color \
           -detailed-exitcode \
-          -input=false | tee plan.out
+          -input=false | tee tfplan.out
           
     - name: Terraform Plan Status
       if: steps.plan.outcome == 'failure'

@@ -20,72 +20,72 @@ on:
         description: "Maintainer Name"
   push:
     branches:
-      - '**' # Trigger on every branch for push events
+      - '**'
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, closed]
     branches:
      - main
 
 jobs:
-  # terraform-check:
-  #   name: Terraform fmt, validate and tfsec check
-  #   if:  ${{ (github.event_name == 'push') && (github.ref != 'refs/heads/main') }} 
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     exitcode: ${{ steps.plan.outputs.exitcode }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Terraform fmt, validate and tfsec check
-  #       id: checks
-  #       uses: ./.github/actions/terraform-checks
-  #       with:
-  #         aws-region: ${{ vars.AWS_REGION }}
-  #         terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
-  #         working-directory: prod
+  terraform-check:
+    name: Terraform fmt, validate and tfsec check
+    if:  ${{ github.ref != 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    outputs:
+      exitcode: ${{ steps.plan.outputs.exitcode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Terraform fmt, validate and tfsec check
+        id: checks
+        uses: ./.github/actions/terraform-checks
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          working-directory: prod
 
 
-  # terraform-plan:
-  #   name: Terraform Plan
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Terraform Plan
-  #       id: plan
-  #       uses: ./.github/actions/terraform-plan
-  #       with:
-  #         deploy: true
-  #         aws-region: ${{ vars.AWS_REGION }}
-  #         terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
-  #         maintainer: $GITHUB_USER
-  #         working-directory: prod
-  #     - name: Upload Plan to S3
-  #       run: aws s3 cp tfplan s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/pr${{ github.event.pull_request.number }}/terraform-plan$-{{ github.sha }}.tfplan
-
-
-  terraform-apply:
-  # if_merged:
-  #   if: github.event.pull_request.merged == true && github.ref == 'refs/heads/test'
-    if: github.ref == 'refs/heads/dev'
-    # needs: [terraform-plan]
-    name: Terraform Apply
-    # if: (github.ref_name == 'dev' && needs.terraform-plan.outputs.exitcode == 2)
+  terraform-plan:
+    name: Terraform Plan
+    if:  ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }} 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Terraform Init
-        id: init
-        uses: ./.github/actions/terraform-checks
+      - name: Terraform Plan
+        id: plan
+        uses: ./.github/actions/terraform-plan
         with:
-          aws-region: us-east-1
-          terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
+          deploy: true
+          aws-region: ${{ vars.AWS_REGION }}
+          terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          maintainer: $GITHUB_USER
           working-directory: prod
+      - name: Upload Plan to S3
+        run: | 
+          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          aws s3 cp prod/tfplan.out s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan
+
+
+  terraform-apply:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true }} 
+    needs: [terraform-plan]
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Upload Plan to S3
+        run: | 
+          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          cd prod && aws s3  s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan prod.tfplan
 
       - name: Terraform Apply
         id: plan
         uses: ./.github/actions/terraform-apply
         with:
           deploy: false
-          working-directory: prod 
+          terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          maintainer: $GITHUB_USER
+          working-directory: prod

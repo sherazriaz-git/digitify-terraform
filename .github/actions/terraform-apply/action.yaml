@@ -4,16 +4,25 @@ inputs:
   deploy:
     required: true
     description: "Desired state for the deployment. true=deploy | false=destroy"
+  aws-region:
+    required: true
+    description: "AWS Region"
+  terraform-execution-iam-role-arn:
+    required: false
+    description: "Terraform Execution IAM Role ARN"
   working-directory:
     required: false
     description: "Working Directory"
-outputs:
-  exitcode:
-    description: "Terraform Plan Exit code"
-    value: ${{ steps.plan.outputs.exitcode }}
 runs:
   using: "composite"
   steps:
+    - name: Terraform Init
+      id: init
+      uses: ./.github/actions/terraform-init
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        terraform-execution-iam-role-arn: ${{ inputs.terraform-execution-iam-role-arn}}
+        working-directory: ${{ inputs.working-directory }}
     - name: Define Terraform Apply Command # 'terraform apply' or 'terraform destroy'
       id: tf_apply_command
       shell: bash
@@ -31,5 +40,4 @@ runs:
       run: |
         ${{ steps.tf_apply_command.outputs.APPLY_COMMAND }} \
           -var=maintainer=$GITHUB_USER \
-          -auto-approve \
-          -input=false
+          prod.tfplan
