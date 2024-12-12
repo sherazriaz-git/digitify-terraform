@@ -39,10 +39,10 @@ This repository provides a streamlined way to manage and deploy Terraform infras
    - Once the resource created updat the backend configuration in `provider.tf` and use `terraform init` to migrate the local state to s3 bucket.
 
 3. **GitHub Secrets**
-   - Add the following secrets to your repository:
-     - `AWS_IAM_ROLE_ARN`: The ARN of your AWS OIDC role.
-     - `AWS_REGION`: The region of your AWS resources.
-     - `TF_STATE_BUCKET_NAME`: Bucket where terraform plan will be saved
+   - Add the following secrets  adn variables to your repository:
+     - Secret:  `AWS_IAM_ROLE_ARN`: The ARN of your AWS OIDC role.
+     - Variable `AWS_REGION`: The region of your AWS resources.
+     - Variable `TF_STATE_BUCKET_NAME`: Bucket where terraform plan will be saved
 
 ## Workflow
 

@@ -26,6 +26,8 @@ on:
     types: [opened, reopened, closed]
     branches:
      - main
+    paths-ignore:
+      - '**/README.md'
 
 jobs:
   terraform-check:
