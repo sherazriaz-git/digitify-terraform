@@ -40,7 +40,7 @@ This repository provides a streamlined way to manage and deploy Terraform infras
 
 3. **GitHub Secrets**
    - Add the following secrets to your repository:
-     - `AWS_ROLE_ARN`: The ARN of your AWS OIDC role.
+     - `AWS_IAM_ROLE_ARN`: The ARN of your AWS OIDC role.
      - `AWS_REGION`: The region of your AWS resources.
      - `S3_BUCKET_NAME`: Name of the S3 bucket to store plan files.
      - `TERRAFORM_WORKSPACE`: Optional, if using multiple Terraform workspaces.
