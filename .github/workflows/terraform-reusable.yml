@@ -74,8 +74,9 @@ jobs:
       id-token: write
       contents: read
     steps:
-
-      - name: Upload Plan to S3
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download Plan from  S3
         run: | 
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
@@ -85,7 +86,7 @@ jobs:
         id: plan
         uses: ./.github/actions/terraform-apply
         with:
-          deploy: false
+          deploy: true
           terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
           maintainer: $GITHUB_USER
           working-directory: prod
