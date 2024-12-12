@@ -22,7 +22,7 @@ on:
     branches:
       - '**'
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, closed]
     branches:
      - main
 
@@ -62,31 +62,30 @@ jobs:
           maintainer: $GITHUB_USER
           working-directory: prod
       - name: Upload Plan to S3
-        run: aws s3 cp prod/tfplan.out s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/pr-${{ github.event.number }}/terraform-plan$-${{ github.sha }}.tfplan
+        run: | 
+          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          aws s3 cp prod/tfplan.out s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan
 
 
-  # terraform-apply:
-  # # if_merged:
-  # #   if: github.event.pull_request.merged == true && github.ref == 'refs/heads/test'
-  #   if: github.ref == 'refs/heads/dev'
-  #   # needs: [terraform-plan]
-  #   name: Terraform Apply
-  #   # if: (github.ref_name == 'dev' && needs.terraform-plan.outputs.exitcode == 2)
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Terraform Init
-  #       id: init
-  #       uses: ./.github/actions/terraform-checks
-  #       with:
-  #         aws-region: us-east-1
-  #         terraform-execution-iam-role-arn: arn:aws:iam::099199746132:role/github-oidc-provider-aws
-  #         working-directory: prod
+  terraform-apply:
+    if: ${{ (github.event.pull_request.merged == true) && (github.ref == 'refs/heads/main') }}
+    needs: [terraform-plan]
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    steps:
 
-  #     - name: Terraform Apply
-  #       id: plan
-  #       uses: ./.github/actions/terraform-apply
-  #       with:
-  #         deploy: false
-  #         working-directory: prod 
+      - name: Upload Plan to S3
+        run: | 
+          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          cd prod && aws s3  s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan prod.tfplan
+
+      - name: Terraform Apply
+        id: plan
+        uses: ./.github/actions/terraform-apply
+        with:
+          deploy: false
+          terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          maintainer: $GITHUB_USER
+          working-directory: prod
