@@ -20,7 +20,7 @@ on:
         description: "Maintainer Name"
   push:
     branches:
-      - '**' # Trigger on every branch for push events
+      - '**'
   pull_request:
     types: [opened, reopened]
     branches:
@@ -47,6 +47,7 @@ jobs:
 
   terraform-plan:
     name: Terraform Plan
+    if: {{ (github.event_name == 'pull_request') && (github.ref == 'refs/heads/main')}}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
