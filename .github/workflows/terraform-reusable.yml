@@ -30,8 +30,7 @@ on:
 jobs:
   terraform-check:
     name: Terraform fmt, validate and tfsec check
-    if : github.ref != 'refs/heads/main'
-    # if:  ${{ (github.event_name == 'push') && (github.ref != 'refs/heads/main') }} 
+    if:  ${{ (github.event_name == 'push') && (github.ref != 'refs/heads/main') }} 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -80,6 +79,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume:  ${{ secrets.AWS_IAM_ROLE_ARN }}
+          role-session-name: terraform-execution-role
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 1200
+
       - name: Download Plan from  S3
         run: | 
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
