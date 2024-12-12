@@ -21,6 +21,7 @@ on:
   push:
     branches:
       - '**'
+      - '!main'
   pull_request:
     types: [opened, reopened, closed]
     branches:
@@ -67,7 +68,7 @@ jobs:
 
 
   terraform-apply:
-    if:  ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' }} 
+    if:  ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' }} 
     name: Terraform Apply
     runs-on: ubuntu-latest
     permissions:
@@ -80,7 +81,7 @@ jobs:
         run: | 
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          cd prod && aws s3  s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan prod.tfplan
+          cd prod && aws s3 cp  s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan prod.tfplan
 
       - name: Terraform Apply
         id: plan
