@@ -64,7 +64,7 @@ jobs:
         run: | 
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          aws s3 cp prod/tfplan.out s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan
+          aws s3 cp prod/tfplan   s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan
 
 
   terraform-apply:
@@ -89,7 +89,7 @@ jobs:
         run: | 
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          cd prod && aws s3 cp  s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan prod.tfplan
+          cd prod && aws s3 cp  s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/$PR_NUMBER/terraform-plan-${{ github.event.pull_request.head.sha }}_plan.tfplan tfplan
 
       - name: Terraform Apply
         id: plan
