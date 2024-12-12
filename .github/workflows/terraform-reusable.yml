@@ -47,7 +47,6 @@ jobs:
 
   terraform-plan:
     name: Terraform Plan
-    # if: ${{ (github.event_name == 'push') && (github.ref != 'refs/heads/main') }} 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -61,8 +60,8 @@ jobs:
           terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
           maintainer: $GITHUB_USER
           working-directory: prod
-      # - name: Upload Plan to S3
-      #   run: aws s3 cp tfplan s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/pr${{ github.event.pull_request.number }}/terraform-plan$-{{ github.sha }}.tfplan
+      - name: Upload Plan to S3
+        run: aws s3 cp tfplan s3://${{ vars.TF_STATE_BUCKET_NAME }}/github/pr${{ github.event.pull_request.number }}/terraform-plan$-{{ github.sha }}.tfplan
 
 
   # terraform-apply:
