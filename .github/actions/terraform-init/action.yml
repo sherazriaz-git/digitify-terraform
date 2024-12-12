@@ -1,0 +1,31 @@
+name: "Terraform Init"
+description: "Terraform Checks"
+inputs:
+  aws-region:
+    required: true
+    description: "AWS Region"
+  terraform-execution-iam-role-arn:
+    required: false
+    description: "Terraform Execution IAM Role ARN"
+  working-directory:
+    required: false
+    description: "Working Directory"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.10.1
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.terraform-execution-iam-role-arn }}
+        role-session-name: terraform-execution-role
+        aws-region: ${{ inputs.aws-region }}
+        role-duration-seconds: 1200
+    - name: Terraform Init
+      id: init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform init

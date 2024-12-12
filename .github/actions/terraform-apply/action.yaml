@@ -1,0 +1,35 @@
+name: "Terraform Apply"
+description: "Terraform Plan Composite Action"
+inputs:
+  deploy:
+    required: true
+    description: "Desired state for the deployment. true=deploy | false=destroy"
+  working-directory:
+    required: false
+    description: "Working Directory"
+outputs:
+  exitcode:
+    description: "Terraform Plan Exit code"
+    value: ${{ steps.plan.outputs.exitcode }}
+runs:
+  using: "composite"
+  steps:
+    - name: Define Terraform Apply Command # 'terraform apply' or 'terraform destroy'
+      id: tf_apply_command
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if ${{ inputs.deploy }}
+        then
+          echo "APPLY_COMMAND=terraform apply" >> $GITHUB_OUTPUT
+        else
+          echo "APPLY_COMMAND=terraform destroy" >> $GITHUB_OUTPUT
+        fi
+    - name: Terraform Apply
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        ${{ steps.tf_apply_command.outputs.APPLY_COMMAND }} \
+          -var=maintainer=$GITHUB_USER \
+          -auto-approve \
+          -input=false

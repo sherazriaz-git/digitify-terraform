@@ -1,0 +1,161 @@
+# # name: "Upload Terraform Plan to S3"
+# # description: "Upload Terraform plan file to S3 bucket"
+# # inputs:
+# #   plan_file:
+# #     description: "Terraform plan file"
+# #     required: true
+# #   bucket_name:
+# #     description: "S3 bucket name"
+# #     required: true
+# #   commit_id:
+# #     description: "Git commit ID"
+# #     required: true
+# #   pr_id:
+# #     description: "Pull Request ID"
+# #     required: true
+# # runs:
+# #   using: "composite"
+# #   steps:
+# #     - name: Upload plan to S3
+# #       run: |
+# #         aws s3 cp ${{ inputs.plan_file }} s3://${{ inputs.bucket_name }}/terraform-plans/${{ inputs.commit_id }}-${{ inputs.pr_id }}.plan
+# #       env:
+# #         AWS_REGION: us-east-1
+# #         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+
+# name: 'Terraform setup and plan'
+# description: 'Setup Terraform and creates plan'
+# inputs:
+#   terraform_directory:
+#     description: 'Directory that holds Terraform code'
+#     required: true
+#   terraform_sa: 
+#     description: 'GCP service account used for Terraform actions'
+#     required: true
+#   terraform_version: 
+#     description: 'Terraform Version'
+#     required: true
+#     default: 1.2.9
+#   github_token: 
+#     description: 'GitHub token for auth'
+#     required: true
+#   google_sa_key:
+#     description: 'JSON key for GCP service account'
+#     required: true
+#   pr_id:
+#     description: 'Pull request ID'
+#     required: true
+
+# runs:
+#   using: "composite"
+#   steps:
+#     - name: Setup Terraform
+#       uses: hashicorp/setup-terraform@v2
+#       with:
+#         terraform_version: ${{ inputs.terraforom_version }}
+#         terraform_wrapper: false
+
+#     - id: 'auth'
+#       name: 'Authenticate to Google Cloud'
+#       uses: 'google-github-actions/auth@v1'
+#       with:
+#         service_account: ${{ inputs.terraform_sa }}
+#         credentials_json: ${{ inputs.google_sa_key }}
+
+#     - name: 'Set up Cloud SDK'
+#       uses: 'google-github-actions/setup-gcloud@v0.6.0'
+
+#     - name: Terraform Init
+#       id: init
+#       working-directory: ${{ inputs.terraform_directory }}
+#       shell: bash
+#       run: |
+#         terraform init
+
+#     - name: Terraform Plan
+#       id: plan
+#       working-directory: ${{ inputs.terraform_directory }}
+#       shell: bash
+#       run: |
+#         echo 'plan<<EOF' >> $GITHUB_OUTPUT
+#         terraform plan -no-color -out=tfplan >> $GITHUB_OUTPUT
+#         echo 'EOF' >> $GITHUB_OUTPUT
+
+#     - name: Save Artifact
+#       id: save-artifact
+#       uses: actions/upload-artifact@v3
+#       with:
+#         name: ${{ inputs.pr_id }}-tf-plan
+#         path: ${{ inputs.terraform_directory }}/tfplan
+
+#     - name: Comment Plan
+#       id: comment-plan
+#       uses: peter-evans/create-or-update-comment@v2
+#       with:
+#         token: ${{ inputs.github_token }}
+#         issue-number: ${{ inputs.pr_id }}
+#         body: |
+#           Terraform Plan:
+
+#           ```
+#           ${{ steps.plan.outputs.plan }}
+#           ```
+
+#           Plan saved to GH artifacts.
+
+
+
+name: "Terraform Plan"
+description: "Terraform Plan Composite Action"
+inputs:
+  deploy:
+    required: true
+    description: "Desired state for the deployment. true=deploy | false=destroy"
+  aws-region:
+    required: true
+    description: "AWS Region"
+  working-directory:
+    required: true
+    description: "Working Directory"
+  maintainer:
+    required: true
+    description: "Maintainer Name"
+runs:
+  using: "composite"
+  steps:
+    - name: Terraform Init
+      id: init
+      uses: ./.github/actions/terraform-init
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        terraform-execution-iam-role-arn: ${{ inputs.terraform-execution-iam-role-arn}}
+        working-directory: ${{ inputs.working-directory }}
+    - name: Define Terraform Plan Command # 'terraform plan' or 'terraform plan -destroy'
+      id: tf_plan_command
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if ${{ inputs.deploy }}
+        then
+          echo "PLAN_COMMAND=terraform plan" >> $GITHUB_OUTPUT
+        else
+          echo "PLAN_COMMAND=terraform plan -destroy" >> $GITHUB_OUTPUT
+        fi
+    - name: Terraform Plan
+      id: plan
+      continue-on-error: true
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        ${{ steps.tf_plan_command.outputs.PLAN_COMMAND }} \
+          -var=maintainer=${{ inputs.maintainer }} \
+          -no-color \
+          -detailed-exitcode \
+          -input=false | tee plan.out
+          
+    - name: Terraform Plan Status
+      if: steps.plan.outcome == 'failure'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: exit 1
