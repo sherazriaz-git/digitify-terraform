@@ -96,6 +96,8 @@ jobs:
         uses: ./.github/actions/terraform-apply
         with:
           deploy: true
+          working-directory: prod
+          aws-region: ${{ vars.AWS_REGION }}
           terraform-execution-iam-role-arn: ${{ secrets.AWS_IAM_ROLE_ARN }}
           maintainer: $GITHUB_USER
-          working-directory: prod
+
